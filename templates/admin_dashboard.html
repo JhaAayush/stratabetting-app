@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Stratabetting{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h2>
+        <p class="text-muted">Manage events, betting questions, and view analytics</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ users|length }}</h3>
+                <p>Total Students</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ events|length }}</h3>
+                <p>Total Events</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-coins"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ total_bets }}</h3>
+                <p>Total Bets</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-download"></i>
+            </div>
+            <div class="stat-content">
+                <h3><a href="{{ url_for('export_data') }}" class="text-decoration-none">Export</a></h3>
+                <p>Data Download</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-calendar-alt"></i> Events Management</h5>
+                <a href="{{ url_for('create_event') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Create Event
+                </a>
+            </div>
+            <div class="card-body">
+                {% if events %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Sport</th>
+                                <th>Event Name</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Questions</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in events %}
+                            <tr>
+                                <td>{{ event.sport.name }}</td>
+                                <td>{{ event.name }}</td>
+                                <td><span class="badge bg-info">{{ event.event_type }}</span></td>
+                                <td>
+                                    {% if event.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ event.betting_questions|length }}</td>
+                                <td>
+                                    <a href="{{ url_for('manage_questions', event_id=event.id) }}"
+                                        class="btn btn-sm btn-outline-primary">
+                                        Manage
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-plus fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No events created yet. Create your first event!</p>
+                    <a href="{{ url_for('create_event') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create Event
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-tools"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('create_event') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-plus"></i> Create New Event
+                    </a>
+                    <a href="{{ url_for('export_data') }}" class="btn btn-outline-success">
+                        <i class="fas fa-download"></i> Export All Data
+                    </a>
+                    <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#analyticsModal">
+                        <i class="fas fa-chart-bar"></i> View Analytics
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-users"></i> Recent Registrations</h5>
+            </div>
+            <div class="card-body">
+                {% if users %}
+                {% for user in users[-5:] %}
+                <div class="user-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold">{{ user.name }}</div>
+                            <small class="text-muted">{{ user.roll_number }}</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="balance">{{ user.balance }} coins</div>
+                            <small class="text-muted">{{ user.created_at.strftime('%d %b') }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted text-center">No users registered yet</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics Modal -->
+<div class="modal fade" id="analyticsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Analytics Overview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h6>Platform Statistics</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-between">
+                                    <span>Total Events</span>
+                                    <span>{{ events|length }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Active Events</span>
+                                    <span>{{ events|selectattr('is_active')|list|length }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Total Questions</span>
+                                    <span>{{ total_questions }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-between">
+                                    <span>Total Users</span>
+                                    <span>{{ users|length }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Total Bets</span>
+                                    <span>{{ total_bets }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Avg Balance</span>
+                                    <span>{{ "%.1f"|format(users|sum(attribute='balance') / users|length if users else
+                                        0) }} coins</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

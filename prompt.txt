@@ -1,0 +1,16 @@
+Kritansh is the flagship sports event of IIM Amritsar. Multiple sports inclusing but not limited to - cricket, football, chess, futsal, basketball, table tennis, carrom, fifa, bgmi, badminton, pool, tug of war, athletics, fisbee. There are four teams - Alpha Wolves, Black Pirates, Dragon Slayers, Viking Warriors. But thats not relevant to you. 
+
+What is relevant to you is this: I am going to make a website for an event called "Stratabetting". It is conducted by Stratagem club of IIM Amritsar in relation with kritansh. It's a betting website with virtual currency. All students start with 200 points. Then before each sports they can bet on stuff like:
+
+Which team will win Cricket Semi-Final 1?	How many coins are you willing to bet?
+Which team will win Cricket Semi-Final 2?	How many coins are you willing to bet?	
+Cricket Finals will be played between which two teams? (Odds not applicable). How many coins are you willing to bet? 
+Which team will win Cricket finals?	How many coins are you willing to bet?
+How many Total runs will the winning team score? How many coins are you willing to bet?	
+How many sixes do you think will be hit in the Final match?	How many coins are you willing to bet?
+
+This was originally done using google forms and excel but this was tiresome. I want to create a site where students can login. Then they can go see forms with this question and choose the amount of coins they want to bet. And I want to ofcourse keep track on how many coins (or points) they have, for which events they have made bets on etc. I also want the to be able to squad for each team. 
+
+Then I want admins (stratagem coordinators) to be able to update the forms and questions and odds in some way. And I want them to be able to download the data (who has betted, how many coins, etc) and be able to update result on website so that number of coins people winn or lose can be calcualted automatically. 
+
+And I want to use flask for backend obviously

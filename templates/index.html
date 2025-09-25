@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to Stratabetting - Kritansh 2024{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto text-center">
+        <div class="hero-section">
+            <h1 class="display-4 fw-bold text-primary mb-4">
+                <i class="fas fa-coins"></i> Stratabetting
+            </h1>
+            <p class="lead mb-4">
+                The ultimate virtual betting experience for Kritansh 2024!
+                Bet on your favorite teams and events with virtual coins.
+            </p>
+            <div class="row mb-5">
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <i class="fas fa-trophy fa-3x text-warning mb-3"></i>
+                        <h5>Multiple Sports</h5>
+                        <p>Cricket, Football, Basketball, Chess, and more!</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <i class="fas fa-coins fa-3x text-success mb-3"></i>
+                        <h5>Virtual Currency</h5>
+                        <p>Start with 200 coins and bet on various outcomes</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <i class="fas fa-chart-line fa-3x text-info mb-3"></i>
+                        <h5>Real-time Analytics</h5>
+                        <p>Track your betting performance and winnings</p>
+                    </div>
+                </div>
+            </div>
+
+            {% if not current_user.is_authenticated %}
+            <div class="d-grid gap-2 d-md-block">
+                <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg me-2">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </a>
+                <a href="{{ url_for('register') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-user-plus"></i> Register
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <h2 class="text-center mb-4">How It Works</h2>
+        <div class="row">
+            <div class="col-md-3 text-center">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h5>Register & Login</h5>
+                    <p>Create your account using your roll number</p>
+                </div>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h5>Browse Events</h5>
+                    <p>Explore all available sports events and betting options</p>
+                </div>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h5>Place Your Bets</h5>
+                    <p>Bet on match outcomes, scores, and more</p>
+                </div>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="step-card">
+                    <div class="step-number">4</div>
+                    <h5>Win Coins</h5>
+                    <p>Correct predictions earn you more coins!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

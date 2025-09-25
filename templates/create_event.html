@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Create Event - Stratabetting{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5><i class="fas fa-plus"></i> Create New Event</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="sport" class="form-label">Sport *</label>
+                        <select class="form-select" id="sport" name="sport" required>
+                            <option value="">Select a sport</option>
+                            <option value="Cricket">Cricket</option>
+                            <option value="Football">Football</option>
+                            <option value="Basketball">Basketball</option>
+                            <option value="Chess">Chess</option>
+                            <option value="Futsal">Futsal</option>
+                            <option value="Table Tennis">Table Tennis</option>
+                            <option value="Carrom">Carrom</option>
+                            <option value="FIFA">FIFA</option>
+                            <option value="BGMI">BGMI</option>
+                            <option value="Badminton">Badminton</option>
+                            <option value="Pool">Pool</option>
+                            <option value="Tug of War">Tug of War</option>
+                            <option value="Athletics">Athletics</option>
+                            <option value="Frisbee">Frisbee</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="event_name" class="form-label">Event Name *</label>
+                        <input type="text" class="form-control" id="event_name" name="event_name"
+                            placeholder="e.g., Cricket Semi-Final 1" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="event_type" class="form-label">Event Type *</label>
+                        <select class="form-select" id="event_type" name="event_type" required>
+                            <option value="">Select event type</option>
+                            <option value="Match">Match</option>
+                            <option value="Semi-Final">Semi-Final</option>
+                            <option value="Final">Final</option>
+                            <option value="Qualifier">Qualifier</option>
+                            <option value="League">League</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                            placeholder="Optional description of the event"></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Create Event
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
