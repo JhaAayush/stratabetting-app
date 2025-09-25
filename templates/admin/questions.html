@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Manage {{ event.name }} Questions{% endblock %}
+
+{% block content %}
+<div class="mb-10">
+    <a href="{{ url_for('admin_dashboard') }}" class="text-sm text-amber-400 hover:underline mb-2 inline-block">&larr;
+        Back to Events</a>
+    <h1 class="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Manage Questions: {{ event.name }}
+    </h1>
+    <p class="text-slate-500 dark:text-slate-400 mt-2">Add new betting markets or close existing ones.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+    <!-- Add New Question Form -->
+    <div
+        class="lg:col-span-1 bg-white dark:bg-gray-800 shadow-2xl rounded-2xl p-6 border border-slate-200 dark:border-gray-700">
+        <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Add New Question</h3>
+        <form method="POST" action="{{ url_for('create_question', event_id=event.id) }}" class="space-y-6">
+            <div>
+                <label for="question_text" class="block text-sm font-bold text-slate-700 dark:text-slate-300">Question
+                    Text</label>
+                <input type="text" name="question_text" id="question_text" required
+                    class="mt-1 block w-full bg-slate-100 dark:bg-gray-700 border-slate-200 dark:border-gray-600 rounded-md shadow-sm focus:border-amber-400 focus:ring-amber-400 sm:text-sm py-2 px-3">
+            </div>
+
+            <div>
+                <h4 class="font-bold mb-2 text-slate-700 dark:text-slate-300">Options & Odds</h4>
+                <div class="space-y-3">
+                    {% for i in range(1, 6) %}
+                    <div class="flex space-x-2">
+                        <input type="text" name="option_{{i}}_text" placeholder="Option {{i}} Text"
+                            class="block w-2/3 bg-slate-100 dark:bg-gray-700 border-slate-200 dark:border-gray-600 rounded-md shadow-sm sm:text-sm py-2 px-3">
+                        <input type="number" step="0.01" name="option_{{i}}_odds" placeholder="Odds"
+                            class="block w-1/3 bg-slate-100 dark:bg-gray-700 border-slate-200 dark:border-gray-600 rounded-md shadow-sm sm:text-sm py-2 px-3">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button type="submit"
+                class="w-full bg-amber-400 hover:bg-amber-500 text-black font-bold py-3 px-4 rounded-lg transition transform hover:scale-105">Add
+                Question</button>
+        </form>
+    </div>
+
+    <!-- Existing Questions List -->
+    <div class="lg:col-span-2 space-y-4">
+        {% for question in event.questions %}
+        <div class="bg-white dark:bg-gray-800 shadow-xl rounded-xl p-5 border border-slate-200 dark:border-gray-700">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="font-bold text-lg text-slate-800 dark:text-slate-100">{{ question.text }}</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">{{ question.bets|length }} bet(s) placed.
+                    </p>
+                </div>
+                <div class="flex-shrink-0 ml-4">
+                    <a href="{{ url_for('toggle_question_status', question_id=question.id) }}"
+                        class="text-xs font-bold px-3 py-1 rounded-full {{ 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300' if question.is_open else 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300' }}">
+                        {{ 'Open' if question.is_open else 'Closed' }}
+                    </a>
+                </div>
+            </div>
+            <div class="mt-4 border-t border-slate-200 dark:border-gray-700 pt-4">
+                <ul class="space-y-2 text-sm">
+                    {% for option in question.options %}
+                    <li class="flex justify-between text-slate-600 dark:text-slate-300">
+                        <span>{{ option.text }}</span>
+                        <span class="font-mono bg-slate-100 dark:bg-gray-700 px-2 py-0.5 rounded-md text-xs">Odds: {{
+                            option.odds }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-12 px-6 border-2 border-dashed border-slate-200 dark:border-gray-700 rounded-lg">
+            <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-300">No Questions Yet</h3>
+            <p class="text-slate-500 dark:text-slate-400">Use the form on the left to add the first betting market for
+                this event.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

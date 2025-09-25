@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Squads{% endblock %}
+
+{% block header %}Update Team Squads{% endblock %}
+
+{% block content %}
+<div class="bg-white p-6 rounded-xl shadow-lg">
+    <p class="text-gray-600 mb-4">Enter player names separated by commas.</p>
+    <div class="space-y-6">
+        {% for team in teams %}
+        <form method="POST" action="{{ url_for('manage_squads') }}">
+            <input type="hidden" name="team_id" value="{{ team.id }}">
+            <div class="mb-2">
+                <label class="block text-lg font-bold text-gray-800" for="squad_text_{{ team.id }}">
+                    {{ team.name }}
+                </label>
+            </div>
+            <div class="flex items-center space-x-2">
+                <textarea name="squad_text" id="squad_text_{{ team.id }}" rows="3"
+                    class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ team.squad }}</textarea>
+                <button type="submit"
+                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg h-full">Save</button>
+            </div>
+        </form>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

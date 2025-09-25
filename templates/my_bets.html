@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}My Bets{% endblock %}
+
+{% block header %}My Betting History{% endblock %}
+
+{% block content %}
+<div class="bg-white p-6 rounded-xl shadow-lg">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Question
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Your Pick
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for bet in bets %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-normal text-sm font-medium text-gray-900">{{ bet.question.text }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ bet.option.text }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ bet.amount }}</td>
+                    <td
+                        class="px-6 py-4 whitespace-nowrap text-sm font-semibold
+                        {% if bet.status == 'Won' %}text-green-600{% elif bet.status == 'Lost' %}text-red-600{% else %}text-yellow-600{% endif %}">
+                        {{ bet.status }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ bet.timestamp.strftime('%d %b %Y,
+                        %I:%M %p') }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">You haven't placed any bets yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

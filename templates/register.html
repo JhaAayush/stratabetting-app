@@ -1,50 +1,51 @@
 {% extends "base.html" %}
-
-{% block title %}Register - Stratabetting{% endblock %}
-
+{% block title %}Register{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-        <div class="card shadow">
-            <div class="card-body p-5">
-                <div class="text-center mb-4">
-                    <i class="fas fa-user-plus fa-3x text-primary mb-3"></i>
-                    <h3 class="card-title">Register</h3>
-                    <p class="text-muted">Create your Stratabetting account</p>
-                </div>
-
-                <form method="POST">
-                    <div class="mb-3">
-                        <label for="roll_number" class="form-label">Roll Number *</label>
-                        <input type="text" class="form-control" id="roll_number" name="roll_number" required>
-                        <div class="form-text">Your IIM Amritsar roll number</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Full Name *</label>
-                        <input type="text" class="form-control" id="name" name="name" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password *</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
-                    </div>
-
-
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-user-plus"></i> Register
-                        </button>
-                    </div>
-                </form>
-
-                <div class="text-center mt-3">
-                    <p class="mb-0">Already have an account?
-                        <a href="{{ url_for('login') }}" class="text-decoration-none">Login here</a>
-                    </p>
+<div class="flex items-center justify-center min-h-[70vh]">
+    <div class="w-full max-w-md">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Create an Account</h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-2">Join Stratabet and start winning!</p>
+        </div>
+        <form method="POST" class="bg-white dark:bg-slate-800 shadow-2xl rounded-2xl p-8 space-y-6">
+            <div>
+                <label class="block text-slate-700 dark:text-slate-300 text-sm font-bold mb-2" for="name">
+                    Full Name
+                </label>
+                <input
+                    class="bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg w-full py-3 px-4 text-slate-700 dark:text-slate-200 leading-tight focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    id="name" name="name" type="text" placeholder="Your Name" required>
+            </div>
+            <div>
+                <label class="block text-slate-700 dark:text-slate-300 text-sm font-bold mb-2" for="roll_number">
+                    Roll Number
+                </label>
+                <input
+                    class="bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg w-full py-3 px-4 text-slate-700 dark:text-slate-200 leading-tight focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    id="roll_number" name="roll_number" type="text" placeholder="MBAXXXXX" required>
+            </div>
+            <div>
+                <label class="block text-slate-700 dark:text-slate-300 text-sm font-bold mb-2" for="password">
+                    Password
+                </label>
+                <div class="relative">
+                    <input
+                        class="bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg w-full py-3 px-4 text-slate-700 dark:text-slate-200 leading-tight focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        id="password" name="password" type="password" placeholder="Choose a secure password" required>
                 </div>
             </div>
-        </div>
+            <div class="flex flex-col items-center justify-center space-y-4 pt-4">
+                <button
+                    class="w-full bg-amber-400 hover:bg-amber-500 text-black font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-transform transform hover:scale-105"
+                    type="submit">
+                    Create Account
+                </button>
+                <a class="inline-block align-baseline font-bold text-sm text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white"
+                    href="{{ url_for('login') }}">
+                    Already have an account? <span class="text-amber-400">Login</span>
+                </a>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}

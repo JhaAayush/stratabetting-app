@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+{% if not available_questions %}
+<div class="bg-white border-2 border-amber-400 text-gray-800 p-6 rounded-2xl shadow-lg text-center" role="alert">
+    <h2 class="font-extrabold text-2xl mb-2">No Bets Available</h2>
+    <p class="text-gray-600">There are currently no open bets, or you've already bet on all available questions. Check
+        back soon!</p>
+</div>
+{% endif %}
+
+<div class="space-y-10">
+    {% for event, questions in available_questions.items() %}
+    <div class="bg-white p-6 rounded-2xl shadow-2xl border border-gray-200">
+        <h2 class="text-3xl font-extrabold text-gray-900 mb-6 border-b-2 border-gray-100 pb-4">{{ event.name }}</h2>
+        <div class="space-y-8">
+            {% for question in questions %}
+            <form method="POST" action="{{ url_for('place_bet', question_id=question.id) }}">
+                <div class="border border-gray-200 p-6 rounded-xl bg-gray-50">
+                    <p class="font-bold text-xl text-gray-800 mb-4">{{ question.text }}</p>
+                    <div class="space-y-3 mb-5">
+                        {% for option in question.options %}
+                        <label
+                            class="flex items-center p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-amber-400 transition cursor-pointer has-[:checked]:border-amber-400 has-[:checked]:ring-2 has-[:checked]:ring-amber-400">
+                            <input type="radio" name="option_id" value="{{ option.id }}"
+                                class="h-4 w-4 text-amber-500 border-gray-300 focus:ring-amber-400" required>
+                            <span class="ml-4 flex-grow text-gray-800 font-semibold">{{ option.text }}</span>
+                            <span class="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full font-bold">Odds: {{
+                                option.odds }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <input type="number" name="amount" placeholder="Bet Amount"
+                            class="shadow-sm appearance-none border rounded-lg w-48 py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-amber-400"
+                            required min="1" max="{{ user.points }}">
+                        <button type="submit"
+                            class="bg-black hover:bg-gray-800 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:shadow-outline transition">Place
+                            Bet</button>
+                    </div>
+                </div>
+            </form>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Team Squads{% endblock %}
+
+{% block header %}Kritansh Team Squads{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    {% for team in teams %}
+    <div class="bg-white p-6 rounded-xl shadow-lg">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">{{ team.name }}</h2>
+        <ul class="list-disc list-inside space-y-2 text-gray-700">
+            {% for player in team.squad.split(',') %}
+            <li>{{ player.strip() }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% else %}
+    <p class="text-gray-500">No teams have been added yet.</p>
+    {% endfor %}
+</div>
+{% endblock %}
