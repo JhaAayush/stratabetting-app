@@ -2,19 +2,20 @@
 
 This is a Flask-based web application for managing a virtual betting system for the Kritansh sports event at IIM Amritsar. It features a sleek, modern dark-mode interface with a theme switcher and robust admin controls.
 
+
 ---
 
 ## Features
 
--   **User Authentication**: Students can register and log in using their roll numbers and full names.
--   **Password Management**: Users can securely change their passwords after logging in.
--   **Virtual Currency**: Each student starts with 200 points to place bets.
--   **Dynamic Betting Markets**: Admins can create events (e.g., Cricket) and add multiple betting questions with different options and odds.
--   **Elegant Admin Panel**: A secure area for admins to:
-    -   Create, activate, deactivate, and **delete** sports events.
-    -   Add, edit, and close betting questions.
-    -   Update team squads.
-    -   Declare winning results, which automatically calculates and distributes points.
+- **User Authentication**: Students can register and log in using their roll numbers and full names.
+- **Password Management**: Users can securely change their passwords after logging in.
+- **Virtual Currency**: Each student starts with 200 points to place bets.
+- **Dynamic Betting Markets**: Admins can create events (e.g., Cricket) and add multiple betting questions with different options and odds.
+- **Elegant Admin Panel**: A secure area for admins to:
+    - Create, activate, deactivate, and **delete** sports events.
+    - Add, edit, and close betting questions.
+    - Update team squads.
+    - Declare winning results, which automatically calculates and distributes points.
 -   **Advanced Excel Exports**:
     -   Download a detailed report of all bets, pivoted by user for each event.
     -   Download a sorted leaderboard of all participants who have placed at least one bet.
@@ -27,24 +28,26 @@ This is a Flask-based web application for managing a virtual betting system for 
 
 ## Tech Stack
 
--   **Backend**: Flask
--   **Database**: SQLite (via Flask-SQLAlchemy)
--   **Frontend**: HTML, Tailwind CSS
--   **Interactivity**: Alpine.js (for theme switching)
--   **Security**: Password hashing with Flask-Bcrypt
--   **Excel Export**: OpenPyXL
+- **Backend**: Flask
+- **Database**: SQLite (via Flask-SQLAlchemy)
+- **Frontend**: HTML, Tailwind CSS
+- **Interactivity**: Alpine.js (for theme switching)
+- **Security**: Password hashing with Flask-Bcrypt
+- **Excel Export**: OpenPyXL
 
 ---
 
 ## Setup and Installation
 
-1.  **Clone the repository:**
+1. **Clone the repository:**
+
     ```bash
     git clone [https://github.com/YourUsername/stratabetting-app.git](https://github.com/YourUsername/stratabetting-app.git)
     cd stratabetting-app
     ```
 
-2.  **Create a virtual environment and install dependencies:**
+2. **Create a virtual environment and install dependencies:**
+
     ```bash
     # For Unix/macOS
     python3 -m venv venv

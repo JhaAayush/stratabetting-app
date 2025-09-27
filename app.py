@@ -10,8 +10,14 @@ from io import BytesIO
 
 # --- APP CONFIGURATION ---
 app = Flask(__name__)
+
+# Load SECRET_KEY from environment, fall back to a development key
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secure_and_random_secret_key')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///stratabet.db'
+
+# FIX: Load SQLALCHEMY_DATABASE_URI from the environment variable DATABASE_URL.
+# If DATABASE_URL is not set (e.g., during local development), it defaults to sqlite:///stratabet.db
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///stratabet.db')
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -458,6 +464,7 @@ def download_bets():
                 if bet:
                     # Calculate profit/loss for this bet
                     if bet.status == 'Won':
+                        # The amount returned is winnings (bet * odds), so profit is winnings - bet amount
                         total_won_lost += (bet.amount * bet.option.odds) - bet.amount
                     elif bet.status == 'Lost':
                         total_won_lost -= bet.amount
