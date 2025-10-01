@@ -27,14 +27,14 @@ db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
 
-# --- DATABASE MODELS ---
+# --- DATABASE MODELS (Unchanged)---
 class User(db.Model):
     roll_number = db.Column(db.String(20), primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     password_hash = db.Column(db.String(60), nullable=False)
     points = db.Column(db.Integer, nullable=False, default=200)
     is_admin = db.Column(db.Boolean, nullable=False, default=False)
-    bets = db.relationship('Bet', backref='bettor', lazy=True)
+    bets = db.relationship('Bet', backref='bettor', lazy=True, cascade="all, delete-orphan")
 
     @property
     def password(self):
@@ -84,8 +84,7 @@ class Team(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False)
     squad = db.Column(db.Text, nullable=True)
 
-# ... (The rest of the file is exactly the same as the previous versions)
-# --- HELPER FUNCTIONS & SETUP ---
+# --- HELPER FUNCTIONS & SETUP (Unchanged) ---
 def get_current_user():
     if 'roll_number' in session:
         return User.query.get(session['roll_number'])
@@ -128,6 +127,21 @@ def index():
         return redirect(url_for('dashboard'))
     return render_template('index.html')
 
+# ** NEW: Leaderboard Route **
+@app.route('/leaderboard')
+def leaderboard():
+    user = get_current_user()
+    if not user:
+        # Allow non-logged in users to see the leaderboard too
+        pass
+    
+    # Query for users who have at least one bet, are not admins, sorted by points
+    players = User.query.filter(User.bets.any(), User.is_admin == False).order_by(db.desc(User.points)).all()
+
+    return render_template('leaderboard.html', user=user, players=players)
+
+
+# ... (All other routes up to admin panel are unchanged)
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -282,6 +296,27 @@ def admin_dashboard():
     all_events = Event.query.order_by(Event.name).all()
     return render_template('admin/dashboard.html', user=user, events=all_events)
 
+@app.route('/admin/reset_user', methods=['POST'])
+@admin_required
+def reset_user():
+    roll_number = request.form.get('roll_number_to_reset')
+    user_to_reset = User.query.get(roll_number)
+
+    if not user_to_reset:
+        flash(f"User with roll number '{roll_number}' not found.", 'danger')
+        return redirect(url_for('admin_dashboard'))
+    
+    user_to_reset.password = 'password'
+    user_to_reset.points = 200
+    
+    Bet.query.filter_by(user_roll_number=user_to_reset.roll_number).delete()
+
+    db.session.commit()
+
+    flash(f"Account for {user_to_reset.name} ({user_to_reset.roll_number}) has been reset. New password is 'password' and points are 200.", 'success')
+    return redirect(url_for('admin_dashboard'))
+
+# ... (Rest of admin routes are unchanged)
 @app.route('/admin/events/create', methods=['POST'])
 @admin_required
 def create_event():
@@ -416,10 +451,10 @@ def process_results(question_id):
 @app.route('/admin/download_bets')
 @admin_required
 def download_bets():
+    # ... (This function is unchanged)
     wb = Workbook()
     wb.remove(wb.active)
     events = Event.query.order_by(Event.id).all()
-
     color_palette = [
         PatternFill(start_color="DDEBF7", end_color="DDEBF7", fill_type="solid"),
         PatternFill(start_color="E2EFDA", end_color="E2EFDA", fill_type="solid"),
@@ -428,7 +463,6 @@ def download_bets():
     ]
     static_header_fill = PatternFill(start_color="BFBFBF", end_color="BFBFBF", fill_type="solid")
     summary_header_fill = PatternFill(start_color="A6A6A6", end_color="A6A6A6", fill_type="solid")
-
     for event in events:
         ws = wb.create_sheet(title=event.name)
         questions = sorted(event.questions, key=lambda q: q.id)
@@ -440,38 +474,31 @@ def download_bets():
             ])
         headers.extend(["Total Won/Lost in Event", "Final Score"])
         ws.append(headers)
-
         header_row = ws[1]
         for i in range(1, 4):
             header_row[i-1].fill = static_header_fill
-        
         current_col = 4
         for i, q in enumerate(questions):
             color = color_palette[i % len(color_palette)]
             for _ in range(5):
                 header_row[current_col-1].fill = color
                 current_col += 1
-        
         header_row[current_col-1].fill = summary_header_fill
         header_row[current_col].fill = summary_header_fill
-
         bets_in_event = Bet.query.join(Question).filter(Question.event_id == event.id).all()
         user_event_data = {}
         for bet in bets_in_event:
             roll_number = bet.user_roll_number
             if roll_number not in user_event_data:
                 user_event_data[roll_number] = {
-                    'user': bet.bettor,
-                    'timestamp': bet.timestamp.strftime("%Y-%m-%d %H:%M"),
+                    'user': bet.bettor, 'timestamp': bet.timestamp.strftime("%Y-%m-%d %H:%M"),
                     'bets': {}
                 }
             user_event_data[roll_number]['bets'][bet.question_id] = bet
-        
         for roll_number, data in user_event_data.items():
             user = data['user']
             total_won_lost = 0
             row_data = [data['timestamp'], user.roll_number, user.name]
-            
             for q in questions:
                 bet = data['bets'].get(q.id)
                 if bet:
@@ -480,23 +507,18 @@ def download_bets():
                     elif bet.status == 'Lost':
                         total_won_lost -= bet.amount
                     row_data.extend([
-                        "",
-                        bet.option.text,
+                        "", bet.option.text,
                         bet.question.winning_option.text if bet.question.winning_option else "Pending",
-                        bet.amount,
-                        bet.option.odds
+                        bet.amount, bet.option.odds
                     ])
                 else:
                     row_data.extend(["", "No Bet", "N/A", "", ""])
-            
             row_data.append(int(total_won_lost))
             row_data.append(user.points)
             ws.append(row_data)
-
     excel_io = BytesIO()
     wb.save(excel_io)
     excel_io.seek(0)
-    
     return send_file(
         excel_io,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -508,7 +530,6 @@ def download_bets():
 @admin_required
 def download_results():
     users = User.query.filter(User.bets.any(), User.is_admin == False).order_by(db.desc(User.points)).all()
-    
     wb = Workbook()
     ws = wb.active
     ws.title = "Leaderboard"
@@ -519,11 +540,9 @@ def download_results():
         cell.fill = header_fill
     for rank, user in enumerate(users, start=1):
         ws.append([rank, user.name, user.roll_number, user.points])
-    
     excel_io = BytesIO()
     wb.save(excel_io)
     excel_io.seek(0)
-    
     return send_file(
         excel_io,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -534,4 +553,3 @@ def download_results():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
