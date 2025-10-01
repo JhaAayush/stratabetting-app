@@ -7,23 +7,27 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from openpyxl import Workbook
 from io import BytesIO
+from openpyxl.styles import PatternFill
 
 # --- APP CONFIGURATION ---
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secure_and_random_secret_key_for_dev')
 
-# Load SECRET_KEY from environment, fall back to a development key
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secure_and_random_secret_key')
-
-# FIX: Load SQLALCHEMY_DATABASE_URI from the environment variable DATABASE_URL.
-# If DATABASE_URL is not set (e.g., during local development), it defaults to sqlite:///stratabet.db
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///stratabet.db')
+# Use PostgreSQL if DATABASE_URL is set (in production), otherwise use SQLite (for local development)
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    # The Neon URL starts with postgres://, but SQLAlchemy needs postgresql://
+    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///stratabet.db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
-# --- DATABASE MODELS (Unchanged) ---
+
+# --- DATABASE MODELS ---
 class User(db.Model):
     roll_number = db.Column(db.String(20), primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -80,8 +84,8 @@ class Team(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False)
     squad = db.Column(db.Text, nullable=True)
 
-
-# --- HELPER FUNCTIONS & SETUP (Unchanged) ---
+# ... (The rest of the file is exactly the same as the previous versions)
+# --- HELPER FUNCTIONS & SETUP ---
 def get_current_user():
     if 'roll_number' in session:
         return User.query.get(session['roll_number'])
@@ -117,14 +121,13 @@ def init_db_command():
         print("Teams have been populated.")
 
 
-# --- CORE & USER ROUTES (Unchanged) ---
+# --- CORE & USER ROUTES ---
 @app.route('/')
 def index():
     if get_current_user():
         return redirect(url_for('dashboard'))
     return render_template('index.html')
 
-# ... (All routes from login to squads are unchanged)
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -271,15 +274,14 @@ def squads():
     teams = Team.query.all()
     return render_template('squads.html', teams=teams, user=user)
 
-# --- ADMIN PANEL (Unchanged except for the download routes) ---
+# --- ADMIN PANEL ---
 @app.route('/admin')
 @admin_required
 def admin_dashboard():
-    # ...
     user = get_current_user()
     all_events = Event.query.order_by(Event.name).all()
     return render_template('admin/dashboard.html', user=user, events=all_events)
-# ... (All other admin routes up to the download section are unchanged)
+
 @app.route('/admin/events/create', methods=['POST'])
 @admin_required
 def create_event():
@@ -411,35 +413,48 @@ def process_results(question_id):
 
 
 # --- ADMIN DOWNLOAD ROUTES ---
-
-# ** COMPLETELY REWRITTEN **
 @app.route('/admin/download_bets')
 @admin_required
 def download_bets():
-    """Downloads a detailed Excel report of all bets, pivoted by user and event."""
     wb = Workbook()
     wb.remove(wb.active)
-
     events = Event.query.order_by(Event.id).all()
+
+    color_palette = [
+        PatternFill(start_color="DDEBF7", end_color="DDEBF7", fill_type="solid"),
+        PatternFill(start_color="E2EFDA", end_color="E2EFDA", fill_type="solid"),
+        PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid"),
+        PatternFill(start_color="EAD1DC", end_color="EAD1DC", fill_type="solid")
+    ]
+    static_header_fill = PatternFill(start_color="BFBFBF", end_color="BFBFBF", fill_type="solid")
+    summary_header_fill = PatternFill(start_color="A6A6A6", end_color="A6A6A6", fill_type="solid")
 
     for event in events:
         ws = wb.create_sheet(title=event.name)
         questions = sorted(event.questions, key=lambda q: q.id)
-
-        # Build Headers
         headers = ["Timestamp", "Roll Number", "Name"]
         for q in questions:
             headers.extend([
-                f"Q{q.id}: {q.text}", 
-                "Selected Option", 
-                "Correct Answer", 
-                "Bet Amount", 
-                "Odds"
+                f"Q{q.id}: {q.text}", "Selected Option", "Correct Answer", 
+                "Bet Amount", "Odds"
             ])
         headers.extend(["Total Won/Lost in Event", "Final Score"])
         ws.append(headers)
 
-        # Aggregate data by user
+        header_row = ws[1]
+        for i in range(1, 4):
+            header_row[i-1].fill = static_header_fill
+        
+        current_col = 4
+        for i, q in enumerate(questions):
+            color = color_palette[i % len(color_palette)]
+            for _ in range(5):
+                header_row[current_col-1].fill = color
+                current_col += 1
+        
+        header_row[current_col-1].fill = summary_header_fill
+        header_row[current_col].fill = summary_header_fill
+
         bets_in_event = Bet.query.join(Question).filter(Question.event_id == event.id).all()
         user_event_data = {}
         for bet in bets_in_event:
@@ -452,39 +467,32 @@ def download_bets():
                 }
             user_event_data[roll_number]['bets'][bet.question_id] = bet
         
-        # Write a row for each user
         for roll_number, data in user_event_data.items():
             user = data['user']
             total_won_lost = 0
-            
             row_data = [data['timestamp'], user.roll_number, user.name]
             
             for q in questions:
                 bet = data['bets'].get(q.id)
                 if bet:
-                    # Calculate profit/loss for this bet
                     if bet.status == 'Won':
-                        # The amount returned is winnings (bet * odds), so profit is winnings - bet amount
                         total_won_lost += (bet.amount * bet.option.odds) - bet.amount
                     elif bet.status == 'Lost':
                         total_won_lost -= bet.amount
-
                     row_data.extend([
-                        "", # Placeholder for the question text which is in the header
+                        "",
                         bet.option.text,
                         bet.question.winning_option.text if bet.question.winning_option else "Pending",
                         bet.amount,
                         bet.option.odds
                     ])
                 else:
-                    # User did not bet on this question
                     row_data.extend(["", "No Bet", "N/A", "", ""])
             
             row_data.append(int(total_won_lost))
             row_data.append(user.points)
             ws.append(row_data)
 
-    # Save to memory and send
     excel_io = BytesIO()
     wb.save(excel_io)
     excel_io.seek(0)
@@ -499,16 +507,16 @@ def download_bets():
 @app.route('/admin/download_results')
 @admin_required
 def download_results():
-    """Downloads an Excel file of all participants who have bet, sorted by points."""
     users = User.query.filter(User.bets.any(), User.is_admin == False).order_by(db.desc(User.points)).all()
     
     wb = Workbook()
     ws = wb.active
     ws.title = "Leaderboard"
-
     headers = ["Rank", "Name", "Roll Number", "Points"]
     ws.append(headers)
-
+    header_fill = PatternFill(start_color="FFBF00", end_color="FFBF00", fill_type="solid")
+    for cell in ws[1]:
+        cell.fill = header_fill
     for rank, user in enumerate(users, start=1):
         ws.append([rank, user.name, user.roll_number, user.points])
     
@@ -526,3 +534,4 @@ def download_results():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
