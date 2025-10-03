@@ -147,6 +147,7 @@ def login():
     if request.method == 'POST':
         roll_number = request.form['roll_number']
         password = request.form['password']
+        roll_number = roll_number.replace('/', '')
         user = User.query.get(roll_number)
 
         if user and user.verify_password(password):
@@ -165,6 +166,7 @@ def register():
         name = request.form['name']
         roll_number = request.form['roll_number']
         password = request.form['password']
+        roll_number = roll_number.replace('/', '')
         
         if User.query.get(roll_number):
             flash('This roll number is already registered.', 'warning')
@@ -301,13 +303,14 @@ def admin_dashboard():
 def reset_user():
     roll_number = request.form.get('roll_number_to_reset')
     user_to_reset = User.query.get(roll_number)
+    old_points = user_to_reset.points
 
     if not user_to_reset:
         flash(f"User with roll number '{roll_number}' not found.", 'danger')
         return redirect(url_for('admin_dashboard'))
     
     user_to_reset.password = 'password'
-    user_to_reset.points = 200
+    user_to_reset.points = old_points
     
     Bet.query.filter_by(user_roll_number=user_to_reset.roll_number).delete()
 

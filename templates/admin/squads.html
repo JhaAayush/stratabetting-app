@@ -5,24 +5,37 @@
 {% block header %}Update Team Squads{% endblock %}
 
 {% block content %}
-<div class="bg-white p-6 rounded-xl shadow-lg">
-    <p class="text-gray-600 mb-4">Enter player names separated by commas.</p>
-    <div class="space-y-6">
+<div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+    <p class="text-slate-600 dark:text-slate-400 mb-6 border-b dark:border-gray-700 pb-4">
+        Use the editor to format the player list for each team. Changes are saved per team.
+    </p>
+    <div class="space-y-8">
         {% for team in teams %}
-        <form method="POST" action="{{ url_for('manage_squads') }}">
-            <input type="hidden" name="team_id" value="{{ team.id }}">
-            <div class="mb-2">
-                <label class="block text-lg font-bold text-gray-800" for="squad_text_{{ team.id }}">
+        <div class="bg-slate-50 dark:bg-gray-800/50 p-6 rounded-lg border dark:border-gray-200 dark:border-gray-700">
+            <form method="POST" action="{{ url_for('manage_squads') }}">
+                <input type="hidden" name="team_id" value="{{ team.id }}">
+
+                <label class="block text-xl font-bold text-slate-800 dark:text-slate-200"
+                    for="squad_text_{{ team.id }}">
                     {{ team.name }}
                 </label>
-            </div>
-            <div class="flex items-center space-x-2">
-                <textarea name="squad_text" id="squad_text_{{ team.id }}" rows="3"
-                    class="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ team.squad }}</textarea>
-                <button type="submit"
-                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg h-full">Save</button>
-            </div>
-        </form>
+
+                <div class="mt-3">
+                    <input id="squad_text_{{ team.id }}" type="hidden" name="squad_text" value="{{ team.squad | e }}">
+
+                    <trix-editor input="squad_text_{{ team.id }}"
+                        class="trix-content bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 rounded-md shadow-sm min-h-[150px]">
+                    </trix-editor>
+                </div>
+
+                <div class="mt-4 flex justify-end">
+                    <button type="submit"
+                        class="bg-black hover:bg-gray-800 dark:bg-amber-400 dark:hover:bg-amber-500 dark:text-black text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-400 dark:focus:ring-offset-gray-800 transition-colors">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
         {% endfor %}
     </div>
 </div>
