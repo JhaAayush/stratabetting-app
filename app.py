@@ -303,20 +303,17 @@ def admin_dashboard():
 def reset_user():
     roll_number = request.form.get('roll_number_to_reset')
     user_to_reset = User.query.get(roll_number)
-    old_points = user_to_reset.points
 
     if not user_to_reset:
         flash(f"User with roll number '{roll_number}' not found.", 'danger')
         return redirect(url_for('admin_dashboard'))
     
     user_to_reset.password = 'password'
-    user_to_reset.points = old_points
     
-    Bet.query.filter_by(user_roll_number=user_to_reset.roll_number).delete()
 
     db.session.commit()
 
-    flash(f"Account for {user_to_reset.name} ({user_to_reset.roll_number}) has been reset. New password is 'password' and points are 200.", 'success')
+    flash(f"Account for {user_to_reset.name} ({user_to_reset.roll_number}) has been reset. New password is 'password' and points are {user_to_reset.points}.", 'success')
     return redirect(url_for('admin_dashboard'))
 
 # ... (Rest of admin routes are unchanged)
