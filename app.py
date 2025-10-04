@@ -10,9 +10,10 @@ from io import BytesIO
 from openpyxl.styles import PatternFill
 from functools import wraps
 import jwt
-
+from flask_cors import CORS
 # --- APP CONFIGURATION ---
 app = Flask(__name__)
+CORS(app)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secure_and_random_secret_key_for_dev')
 
 # Use PostgreSQL if DATABASE_URL is set (in production), otherwise use SQLite (for local development)
