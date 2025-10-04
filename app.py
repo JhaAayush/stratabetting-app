@@ -1,6 +1,6 @@
 import os
 import io
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import (Flask, render_template, request, redirect, url_for,
                    flash, session, send_file, jsonify)
 from flask_sqlalchemy import SQLAlchemy
@@ -11,10 +11,13 @@ from openpyxl.styles import PatternFill
 from functools import wraps
 import jwt
 from flask_cors import CORS
+
 # --- APP CONFIGURATION ---
 app = Flask(__name__)
 CORS(app)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secure_and_random_secret_key_for_dev')
+
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY','a-different-super-strong-secret-for-dev')
 
 # Use PostgreSQL if DATABASE_URL is set (in production), otherwise use SQLite (for local development)
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -49,6 +52,15 @@ class User(db.Model):
 
     def verify_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
+        
+    def to_dict(self):
+        return {
+            'roll_number': self.roll_number,
+            'name': self.name,
+            'points': self.points,
+            'is_admin': self.is_admin
+        }
+
 
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
