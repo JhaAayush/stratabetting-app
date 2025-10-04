@@ -68,6 +68,16 @@ class Event(db.Model):
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     questions = db.relationship('Question', backref='event', lazy=True, cascade="all, delete-orphan")
 
+    # NEW: Method to serialize object to a dictionary
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'is_active': self.is_active,
+            'questions': [q.to_dict() for q in self.questions]
+        }
+
+
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
@@ -78,11 +88,34 @@ class Question(db.Model):
     winning_option = db.relationship('Option', foreign_keys=[winning_option_id])
     bets = db.relationship('Bet', backref='question', lazy=True, cascade="all, delete-orphan")
 
+    # NEW: Method to serialize object to a dictionary
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'event_id': self.event_id,
+            'event_name': self.event.name,
+            'text': self.text,
+            'is_open': self.is_open,
+            'winning_option_id': self.winning_option_id,
+            'options': [opt.to_dict() for opt in self.options]
+        }
+
+
 class Option(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
     text = db.Column(db.String(100), nullable=False)
     odds = db.Column(db.Float, nullable=False, default=1.8)
+
+    # NEW: Method to serialize object to a dictionary
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'question_id': self.question_id,
+            'text': self.text,
+            'odds': self.odds
+        }
+
 
 class Bet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -94,11 +127,33 @@ class Bet(db.Model):
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     option = db.relationship('Option', backref='bets')
 
+    # NEW: Method to serialize object to a dictionary
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_roll_number': self.user_roll_number,
+            'question_id': self.question_id,
+            'question_text': self.question.text,  # Added for convenience
+            'option_id': self.option_id,
+            'option_text': self.option.text,      # Added for convenience
+            'amount': self.amount,
+            'status': self.status,
+            'timestamp': self.timestamp.isoformat() # Use ISO format for dates
+        }
+
+
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
     squad = db.Column(db.Text, nullable=True)
 
+    # NEW: Method to serialize object to a dictionary
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'squad': self.squad
+        }
 # --- HELPER FUNCTIONS & SETUP (Unchanged) ---
 def get_current_user():
     if 'roll_number' in session:
