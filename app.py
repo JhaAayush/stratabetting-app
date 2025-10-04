@@ -2,12 +2,14 @@ import os
 import io
 from datetime import datetime
 from flask import (Flask, render_template, request, redirect, url_for,
-                   flash, session, send_file)
+                   flash, session, send_file, jsonify)
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from openpyxl import Workbook
 from io import BytesIO
 from openpyxl.styles import PatternFill
+from functools import wraps
+import jwt
 
 # --- APP CONFIGURATION ---
 app = Flask(__name__)
@@ -99,6 +101,29 @@ def admin_required(f):
         return f(*args, **kwargs)
     decorated_function.__name__ = f.__name__
     return decorated_function
+
+# NEW: Token decorator for API
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        if 'Authorization' in request.headers:
+            # Expected format: "Bearer <token>"
+            token = request.headers['Authorization'].split(" ")[1]
+        if not token:
+            return jsonify({'message': 'Token is missing!'}), 401
+        try:
+            data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=["HS256"])
+            current_user = User.query.get(data['roll_number'])
+            if not current_user:
+                return jsonify({'message': 'User not found!'}), 401
+        except jwt.ExpiredSignatureError:
+            return jsonify({'message': 'Token has expired!'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'message': 'Token is invalid!'}), 401
+        
+        return f(current_user, *args, **kwargs)
+    return decorated
 
 @app.cli.command("init-db")
 def init_db_command():
@@ -576,6 +601,119 @@ def download_results():
         as_attachment=True,
         download_name=f'stratabet_leaderboard_{datetime.now().strftime("%Y%m%d")}.xlsx'
     )
+
+#! Android APIs
+
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    data = request.get_json()
+    if not data or not all(k in data for k in ('name', 'roll_number', 'password')):
+        return jsonify({'message': 'Missing data'}), 400
+
+    roll_number = data['roll_number'].replace('/', '')
+    if User.query.get(roll_number):
+        return jsonify({'message': 'This roll number is already registered'}), 409
+
+    new_user = User(name=data['name'], roll_number=roll_number)
+    new_user.password = data['password']
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({'message': 'Registration successful! Please log in.'}), 201
+
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.get_json()
+    if not data or not all(k in data for k in ('roll_number', 'password')):
+        return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+
+    roll_number = data['roll_number'].replace('/', '')
+    user = User.query.get(roll_number)
+
+    if not user or not user.verify_password(data['password']):
+        return jsonify({'message': 'Invalid roll number or password'}), 401
+
+    token = jwt.encode({
+        'roll_number': user.roll_number,
+        'exp': datetime.utcnow() + timedelta(days=30) # Token valid for 30 days
+    }, app.config['JWT_SECRET_KEY'], algorithm="HS256")
+
+    return jsonify({'token': token, 'user': user.to_dict()})
+
+
+@app.route('/api/dashboard', methods=['GET'])
+@token_required
+def api_dashboard(current_user):
+    active_events = Event.query.filter_by(is_active=True).all()
+    user_bets_q_ids = [bet.question_id for bet in current_user.bets]
+    
+    available_questions_list = []
+    for event in active_events:
+        questions = Question.query.filter(
+            Question.event_id == event.id,
+            Question.is_open == True,
+            Question.id.notin_(user_bets_q_ids)
+        ).all()
+        if questions:
+            for q in questions:
+                 available_questions_list.append(q.to_dict())
+
+    return jsonify(available_questions_list)
+
+@app.route('/api/bets/place/<int:question_id>', methods=['POST'])
+@token_required
+def api_place_bet(current_user, question_id):
+    data = request.get_json()
+    if not data or not all(k in data for k in ('amount', 'option_id')):
+        return jsonify({'message': 'Missing amount or option_id'}), 400
+
+    question = Question.query.get_or_404(question_id)
+    if not question.is_open:
+        return jsonify({'message': 'Betting for this question is now closed'}), 403
+
+    try:
+        amount = int(data['amount'])
+        option_id = int(data['option_id'])
+    except ValueError:
+        return jsonify({'message': 'Invalid bet data submitted'}), 400
+
+    if amount <= 0:
+        return jsonify({'message': 'Bet amount must be positive'}), 400
+
+    if current_user.points < amount:
+        return jsonify({'message': 'You do not have enough points for this bet'}), 402
+
+    if Bet.query.filter_by(user_roll_number=current_user.roll_number, question_id=question_id).first():
+        return jsonify({'message': 'You have already placed a bet on this question'}), 409
+
+    current_user.points -= amount
+    new_bet = Bet(user_roll_number=current_user.roll_number, question_id=question_id, option_id=option_id, amount=amount)
+    db.session.add(new_bet)
+    db.session.commit()
+
+    return jsonify({'message': f'Bet of {amount} points placed successfully!', 'new_points': current_user.points}), 201
+
+
+@app.route('/api/my-bets', methods=['GET'])
+@token_required
+def api_my_bets(current_user):
+    bets = Bet.query.filter_by(user_roll_number=current_user.roll_number).order_by(Bet.timestamp.desc()).all()
+    return jsonify([bet.to_dict() for bet in bets])
+
+
+@app.route('/api/leaderboard', methods=['GET'])
+def api_leaderboard():
+    # This endpoint can be public, so no token is required
+    players = User.query.filter(User.bets.any(), User.is_admin == False).order_by(db.desc(User.points)).all()
+    return jsonify([p.to_dict() for p in players])
+
+
+@app.route('/api/squads', methods=['GET'])
+@token_required
+def api_squads(current_user):
+    teams = Team.query.all()
+    return jsonify([team.to_dict() for team in teams])
 
 
 if __name__ == '__main__':
