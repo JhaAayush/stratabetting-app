@@ -127,7 +127,6 @@ def index():
         return redirect(url_for('dashboard'))
     return render_template('index.html')
 
-# ** NEW: Leaderboard Route **
 @app.route('/leaderboard')
 def leaderboard():
     user = get_current_user()
@@ -141,7 +140,6 @@ def leaderboard():
     return render_template('leaderboard.html', user=user, players=players)
 
 
-# ... (All other routes up to admin panel are unchanged)
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -310,13 +308,11 @@ def reset_user():
     
     user_to_reset.password = 'password'
     
-
     db.session.commit()
 
-    flash(f"Account for {user_to_reset.name} ({user_to_reset.roll_number}) has been reset. New password is 'password' and points are {user_to_reset.points}.", 'success')
+    flash(f"Account for {user_to_reset.name} ({user_to_reset.roll_number}) has been reset. New password is 'password'.", 'success')
     return redirect(url_for('admin_dashboard'))
 
-# ... (Rest of admin routes are unchanged)
 @app.route('/admin/events/create', methods=['POST'])
 @admin_required
 def create_event():
@@ -361,28 +357,60 @@ def manage_questions(event_id):
 def create_question(event_id):
     event = Event.query.get_or_404(event_id)
     question_text = request.form.get('question_text')
-    
+
     if not question_text:
         flash('Question text cannot be empty.', 'danger')
         return redirect(url_for('manage_questions', event_id=event.id))
-        
+
+    option_texts = request.form.getlist('option_text')
+    option_odds_list = request.form.getlist('option_odds')
+
+    valid_options_provided = any(text and odds for text, odds in zip(option_texts, option_odds_list))
+    if not valid_options_provided:
+        flash('You must provide at least one complete option (text and odds).', 'danger')
+        return redirect(url_for('manage_questions', event_id=event.id))
+
     new_question = Question(text=question_text, event_id=event.id)
     db.session.add(new_question)
     
-    for i in range(1, 6):
-        option_text = request.form.get(f'option_{i}_text')
-        option_odds = request.form.get(f'option_{i}_odds')
-        if option_text and option_odds:
+    options_added_count = 0
+    for text, odds_str in zip(option_texts, option_odds_list):
+        if text and odds_str:
             try:
-                odds = float(option_odds)
-                option = Option(text=option_text, odds=odds, question=new_question)
+                odds = float(odds_str)
+                if odds <= 1.0:
+                    flash(f'Odds for "{text}" must be greater than 1.0. This option was not added.', 'warning')
+                    continue
+                
+                option = Option(text=text, odds=odds, question=new_question)
                 db.session.add(option)
+                options_added_count += 1
             except ValueError:
-                flash(f'Invalid odds for option {i}. It was not added.', 'warning')
+                flash(f'Invalid odds value "{odds_str}". This option was not added.', 'warning')
+    
+    if options_added_count < 2:
+        db.session.rollback() 
+        flash('A question requires at least two valid options. The question was not created.', 'danger')
+        return redirect(url_for('manage_questions', event_id=event.id))
 
     db.session.commit()
-    flash('New question and its options have been added.', 'success')
+    flash(f'New question with {options_added_count} option(s) has been added.', 'success')
     return redirect(url_for('manage_questions', event_id=event.id))
+
+# ** NEW: Route to delete a question **
+@app.route('/admin/questions/delete/<int:question_id>', methods=['POST'])
+@admin_required
+def delete_question(question_id):
+    question = Question.query.get_or_404(question_id)
+    event_id = question.event_id
+    question_text = question.text
+
+    db.session.delete(question)
+    db.session.commit()
+
+    flash(f'Question "{question_text[:30]}..." and all associated data have been permanently deleted.', 'success')
+    return redirect(url_for('manage_questions', event_id=event_id))
+
 
 @app.route('/admin/questions/toggle/<int:question_id>')
 @admin_required
@@ -447,11 +475,10 @@ def process_results(question_id):
     return redirect(url_for('manage_results'))
 
 
-# --- ADMIN DOWNLOAD ROUTES ---
+# --- ADMIN DOWNLOAD ROUTES (Unchanged) ---
 @app.route('/admin/download_bets')
 @admin_required
 def download_bets():
-    # ... (This function is unchanged)
     wb = Workbook()
     wb.remove(wb.active)
     events = Event.query.order_by(Event.id).all()

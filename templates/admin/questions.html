@@ -8,12 +8,11 @@
         Back to Events</a>
     <h1 class="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Manage Questions: {{ event.name }}
     </h1>
-    <p class="text-slate-500 dark:text-slate-400 mt-2">Add new betting markets or close existing ones.</p>
+    <p class="text-slate-500 dark:text-slate-400 mt-2">Add new betting markets, close, or delete existing ones.</p>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-    <!-- Add New Question Form -->
     <div
         class="lg:col-span-1 bg-white dark:bg-gray-800 shadow-2xl rounded-2xl p-6 border border-slate-200 dark:border-gray-700">
         <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Add New Question</h3>
@@ -27,16 +26,12 @@
 
             <div>
                 <h4 class="font-bold mb-2 text-slate-700 dark:text-slate-300">Options & Odds</h4>
-                <div class="space-y-3">
-                    {% for i in range(1, 6) %}
-                    <div class="flex space-x-2">
-                        <input type="text" name="option_{{i}}_text" placeholder="Option {{i}} Text"
-                            class="block w-2/3 bg-slate-100 dark:bg-gray-700 border-slate-200 dark:border-gray-600 rounded-md shadow-sm sm:text-sm py-2 px-3">
-                        <input type="number" step="0.01" name="option_{{i}}_odds" placeholder="Odds"
-                            class="block w-1/3 bg-slate-100 dark:bg-gray-700 border-slate-200 dark:border-gray-600 rounded-md shadow-sm sm:text-sm py-2 px-3">
-                    </div>
-                    {% endfor %}
+                <div id="options-container" class="space-y-3">
                 </div>
+                <button type="button" id="add-option-btn"
+                    class="mt-4 w-full bg-slate-200 dark:bg-gray-700 hover:bg-slate-300 dark:hover:bg-gray-600 text-slate-700 dark:text-slate-200 font-bold py-2 px-4 rounded-lg transition text-sm">
+                    + Add Another Option
+                </button>
             </div>
 
             <button type="submit"
@@ -45,7 +40,6 @@
         </form>
     </div>
 
-    <!-- Existing Questions List -->
     <div class="lg:col-span-2 space-y-4">
         {% for question in event.questions %}
         <div class="bg-white dark:bg-gray-800 shadow-xl rounded-xl p-5 border border-slate-200 dark:border-gray-700">
@@ -55,11 +49,24 @@
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">{{ question.bets|length }} bet(s) placed.
                     </p>
                 </div>
-                <div class="flex-shrink-0 ml-4">
+                <div class="flex-shrink-0 ml-4 flex items-center space-x-2">
                     <a href="{{ url_for('toggle_question_status', question_id=question.id) }}"
                         class="text-xs font-bold px-3 py-1 rounded-full {{ 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300' if question.is_open else 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300' }}">
                         {{ 'Open' if question.is_open else 'Closed' }}
                     </a>
+                    <form method="POST" action="{{ url_for('delete_question', question_id=question.id) }}"
+                        onsubmit="return confirm('Are you sure you want to permanently delete this question and all its bets? This action cannot be undone.');">
+                        <button type="submit"
+                            class="p-2 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+                            aria-label="Delete question">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path fill-rule="evenodd"
+                                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </form>
                 </div>
             </div>
             <div class="mt-4 border-t border-slate-200 dark:border-gray-700 pt-4">
@@ -83,4 +90,61 @@
         {% endfor %}
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const container = document.getElementById('options-container');
+        const addBtn = document.getElementById('add-option-btn');
+        const trashIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>`;
+
+        function renumberPlaceholders() {
+            const allOptions = container.querySelectorAll('.option-row');
+            allOptions.forEach((row, index) => {
+                const textInput = row.querySelector('input[name="option_text"]');
+                if (textInput) {
+                    textInput.placeholder = `Option ${index + 1} Text`;
+                }
+            });
+        }
+
+        function addOptionRow(isRequired = false) {
+            const newOptionDiv = document.createElement('div');
+            newOptionDiv.className = 'flex items-center space-x-2 option-row';
+            const requiredAttr = isRequired ? 'required' : '';
+
+            newOptionDiv.innerHTML = `
+                <div class="flex-grow flex space-x-2">
+                    <input type="text" name="option_text" ${requiredAttr} class="block w-2/3 bg-slate-100 dark:bg-gray-700 border-slate-200 dark:border-gray-600 rounded-md shadow-sm sm:text-sm py-2 px-3">
+                    <input type="number" step="0.01" name="option_odds" ${requiredAttr} placeholder="Odds" class="block w-1/3 bg-slate-100 dark:bg-gray-700 border-slate-200 dark:border-gray-600 rounded-md shadow-sm sm:text-sm py-2 px-3">
+                </div>
+                <button type="button" class="p-2 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors delete-option-btn" aria-label="Delete option">
+                    ${trashIconSvg}
+                </button>
+            `;
+            container.appendChild(newOptionDiv);
+            renumberPlaceholders();
+        }
+
+        // Add row on button click
+        addBtn.addEventListener('click', () => addOptionRow(false));
+
+        // Handle deletion using event delegation
+        container.addEventListener('click', function (e) {
+            const deleteBtn = e.target.closest('.delete-option-btn');
+            if (deleteBtn) {
+                // Prevent deleting if it's one of the last two options.
+                if (container.children.length > 2) {
+                    deleteBtn.closest('.option-row').remove();
+                    renumberPlaceholders();
+                } else {
+                    alert('A question must have at least two options.');
+                }
+            }
+        });
+
+        // Initialize the form with two default rows
+        addOptionRow(true);
+        addOptionRow(true);
+    });
+</script>
 {% endblock %}
