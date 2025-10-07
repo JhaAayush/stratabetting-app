@@ -193,6 +193,27 @@ def token_required(f):
         return f(current_user, *args, **kwargs)
     return decorated
 
+def get_ranked_leaderboard():
+    """Queries players and calculates their rank, handling ties."""
+    players = User.query.filter(User.bets.any(), User.is_admin == False).order_by(db.desc(User.points)).all()
+    
+    ranked_players = []
+    last_score = -1
+    last_rank = 0
+    
+    for i, player in enumerate(players):
+        current_rank = i + 1
+        if player.points == last_score:
+            # Same score as the previous player, use their rank
+            ranked_players.append({'rank': last_rank, 'player': player})
+        else:
+            # New score, rank is the current position (1-based index)
+            last_rank = current_rank
+            last_score = player.points
+            ranked_players.append({'rank': last_rank, 'player': player})
+            
+    return ranked_players
+
 @app.cli.command("init-db")
 def init_db_command():
     with app.app_context():
@@ -223,15 +244,8 @@ def index():
 @app.route('/leaderboard')
 def leaderboard():
     user = get_current_user()
-    if not user:
-        # Allow non-logged in users to see the leaderboard too
-        pass
-    
-    # Query for users who have at least one bet, are not admins, sorted by points
-    players = User.query.filter(User.bets.any(), User.is_admin == False).order_by(db.desc(User.points)).all()
-
-    return render_template('leaderboard.html', user=user, players=players)
-
+    ranked_players = get_ranked_leaderboard()
+    return render_template('leaderboard.html', user=user, players=ranked_players)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -649,27 +663,31 @@ def download_bets():
 @app.route('/admin/download_results')
 @admin_required
 def download_results():
-    users = User.query.filter(User.bets.any(), User.is_admin == False).order_by(db.desc(User.points)).all()
+    ranked_players = get_ranked_leaderboard()
+    
     wb = Workbook()
     ws = wb.active
     ws.title = "Leaderboard"
     headers = ["Rank", "Name", "Roll Number", "Points"]
     ws.append(headers)
+
     header_fill = PatternFill(start_color="FFBF00", end_color="FFBF00", fill_type="solid")
     for cell in ws[1]:
         cell.fill = header_fill
-    for rank, user in enumerate(users, start=1):
-        ws.append([rank, user.name, user.roll_number, user.points])
+
+    for item in ranked_players:
+        ws.append([item['rank'], item['player'].name, item['player'].roll_number, item['player'].points])
+    
     excel_io = BytesIO()
     wb.save(excel_io)
     excel_io.seek(0)
+    
     return send_file(
         excel_io,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         as_attachment=True,
         download_name=f'stratabet_leaderboard_{datetime.now().strftime("%Y%m%d")}.xlsx'
     )
-
 #! Android APIs
 
 @app.route('/api/register', methods=['POST'])
@@ -772,10 +790,17 @@ def api_my_bets(current_user):
 
 @app.route('/api/leaderboard', methods=['GET'])
 def api_leaderboard():
-    # This endpoint can be public, so no token is required
-    players = User.query.filter(User.bets.any(), User.is_admin == False).order_by(db.desc(User.points)).all()
-    return jsonify([p.to_dict() for p in players])
-
+    ranked_players = get_ranked_leaderboard()
+    
+    # Serialize the data into the desired JSON format
+    leaderboard_data = []
+    for item in ranked_players:
+        leaderboard_data.append({
+            'rank': item['rank'],
+            'user': item['player'].to_dict()
+        })
+        
+    return jsonify(leaderboard_data)
 
 @app.route('/api/squads', methods=['GET'])
 @token_required

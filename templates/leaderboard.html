@@ -30,28 +30,28 @@
                 </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-slate-200 dark:divide-gray-700">
-                {% for player in players %}
+                {% for item in players %}
                 <tr class="hover:bg-slate-50 dark:hover:bg-gray-700/50 transition-colors">
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-800 dark:text-slate-100">
                         <span class="inline-flex items-center justify-center h-8 w-8 rounded-full 
-                            {% if loop.index == 1 %} bg-amber-400 text-black 
-                            {% elif loop.index == 2 %} bg-slate-400 text-black
-                            {% elif loop.index == 3 %} bg-yellow-600 text-white
+                            {% if item.rank == 1 %} bg-amber-400 text-black 
+                            {% elif item.rank == 2 %} bg-slate-400 text-black
+                            {% elif item.rank == 3 %} bg-yellow-600 text-white
                             {% else %} bg-slate-200 dark:bg-gray-700 text-slate-700 dark:text-slate-200 
                             {% endif %}">
-                            {{ loop.index }}
+                            {{ item.rank }}
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">
-                        {% if loop.index == 1 %}
+                        {% if item.rank == 1 %}
                         <i class="fa-solid fa-crown text-amber-400 mr-2"></i>
                         {% endif %}
-                        {{ player.name }}
+                        {{ item.player.name }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{{
-                        player.roll_number }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-amber-500">{{ player.points
-                        }}</td>
+                        item.player.roll_number }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-amber-500">{{
+                        item.player.points }}</td>
                 </tr>
                 {% else %}
                 <tr>
