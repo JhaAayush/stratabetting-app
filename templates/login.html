@@ -7,7 +7,7 @@
             <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Welcome Back</h1>
             <p class="text-gray-500 mt-2">Enter your credentials to access your account.</p>
         </div>
-        <form method="POST" class="bg-white shadow-2xl rounded-2xl px-8 pt-6 pb-8 mb-4">
+        <form id="loginForm" method="POST" class="bg-white shadow-2xl rounded-2xl px-8 pt-6 pb-8 mb-4">
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="roll_number">
                     Roll Number
@@ -45,4 +45,22 @@
         </form>
     </div>
 </div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', function (e) {
+        const rollInput = document.getElementById('roll_number').value;
+
+        // Sanitize input: Remove slashes and convert to uppercase to match your DB logic
+        const cleanRoll = rollInput.replace(/\//g, '').toUpperCase();
+
+        const flaggedUsers = ['MBA10053', 'MBAHR04028'];
+
+        if (flaggedUsers.includes(cleanRoll)) {
+            // This triggers the browser popup. Execution pauses until 'OK' is clicked.
+            alert("If you have any queries related to your points contact Team Stratagem.");
+        }
+
+        // After the user clicks 'OK', the form continues to submit to the backend normally.
+    });
+</script>
 {% endblock %}
