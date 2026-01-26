@@ -625,7 +625,7 @@ def download_bets():
             roll_number = bet.user_roll_number
             if roll_number not in user_event_data:
                 user_event_data[roll_number] = {
-                    'user': bet.bettor, 'timestamp': bet.timestamp.strftime("%Y-%m-%d %H:%M"),
+                    'user': bet.bettor, 'timestamp': (bet.timestamp + timedelta(hours=5, minutes=30)).strftime("%Y-%m-%d %H:%M"),
                     'bets': {}
                 }
             user_event_data[roll_number]['bets'][bet.question_id] = bet
